@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOD_VPN — Рулетка</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+:root {
+    --bg: #06060c; --card: #0e0e1a; --border: rgba(255,255,255,0.08);
+    --accent: #3b82f6; --accent-2: #8b5cf6; --gold: #f59e0b;
+    --green: #10b981; --red: #ef4444;
+}
+body { background: radial-gradient(circle at 50% 0%, #0f172a, #06060c); color:#fff; min-height:100vh; font-size:14px; overflow-x:hidden; }
+.bg-glow { position:fixed; border-radius:50%; filter:blur(100px); opacity:0.3; pointer-events:none; z-index:0; }
+.bg-glow.g1 { width:400px; height:400px; background:#3b82f6; top:-150px; left:-150px; }
+.bg-glow.g2 { width:350px; height:350px; background:#8b5cf6; bottom:-120px; right:-120px; }
+.container { max-width:600px; margin:0 auto; padding:20px; position:relative; z-index:1; }
+.header { display:flex; justify-content:space-between; align-items:center; padding:15px 0; margin-bottom:20px; }
+.logo { font-size:1.3rem; font-weight:900; }
+.logo span { color:var(--accent); }
+.user-badge { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:8px 14px; }
+.user-badge .avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.8rem; }
+.user-badge .name { font-size:0.85rem; font-weight:700; }
+.screen { display:none; }
+.screen.active { display:block; animation:fadeIn 0.4s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.auth-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:30px; text-align:center; }
+.auth-card h2 { font-size:1.5rem; font-weight:900; margin-bottom:10px; }
+.auth-card p { color:#94a3b8; font-size:0.85rem; margin-bottom:25px; }
+.auth-input { width:100%; padding:14px 16px; margin-bottom:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; color:#fff; font-size:0.9rem; outline:none; transition:0.3s; }
+.auth-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+.auth-input.error { border-color:var(--red); box-shadow:0 0 0 3px rgba(239,68,68,0.15); }
+.auth-input::placeholder { color:#64748b; }
+.btn { width:100%; padding:14px; border:none; border-radius:12px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:0.3s; }
+.btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; }
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(59,130,246,0.5); }
+.btn-secondary { background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--border); margin-top:8px; }
+.btn-secondary:hover { background:rgba(255,255,255,0.1); }
+.btn-support { background:rgba(59,130,246,0.15); color:var(--accent); border:1px solid rgba(59,130,246,0.4); margin-top:8px; }
+.btn-support:hover { background:rgba(59,130,246,0.25); }
+.error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:0.8rem; color:#fca5a5; text-align:left; display:none; }
+.error-msg.active { display:block; animation:shake 0.4s; }
+@keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
+.server-error {
+    background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3);
+    border-radius:10px; padding:14px; margin-bottom:12px;
+    font-size:0.85rem; color:#fbbf24; text-align:center;
+    display:none;
+}
+.server-error.active { display:block; }
+.register-info { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:14px; padding:18px; margin-bottom:20px; text-align:left; font-size:0.85rem; color:#cbd5e1; line-height:1.7; }
+.register-info b { color:#fff; }
+.register-info .step { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.register-info .step:last-child { margin-bottom:0; }
+.register-info .step .num { width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:800; color:#fff; flex-shrink:0; }
+.tariff-list { background:rgba(255,255,255,0.03); border-radius:12px; padding:14px; margin-bottom:18px; text-align:left; font-size:0.82rem; }
+.tariff-list .tariff-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+.tariff-list .tariff-row:last-child { border-bottom:none; }
+.tariff-list .tariff-row .name { color:#fff; font-weight:700; }
+.tariff-list .tariff-row .req { color:#94a3b8; }
+.tariff-card { border-radius:20px; padding:25px; margin-bottom:20px; border:2px solid; text-align:center; }
+.tariff-card.bronze { background:linear-gradient(135deg,rgba(205,127,50,0.15),rgba(205,127,50,0.03)); border-color:#cd7f32; }
+.tariff-card.silver { background:linear-gradient(135deg,rgba(192,192,192,0.15),rgba(192,192,192,0.03)); border-color:#c0c0c0; }
+.tariff-card.gold { background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.03)); border-color:#f59e0b; }
+.tariff-card.none { background:rgba(255,255,255,0.03); border-color:var(--border); }
+.tariff-card h3 { font-size:1.3rem; font-weight:900; margin-bottom:8px; }
+.tariff-card p { font-size:0.85rem; color:#cbd5e1; margin-bottom:12px; }
+.tariff-card .btn-contact { padding:10px 20px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:0.85rem; cursor:pointer; }
+.wheel-container { position:relative; width:300px; height:300px; margin:0 auto 25px; }
+.wheel { width:100%; height:100%; border-radius:50%; border:8px solid #1a1a2e; box-shadow:0 0 50px rgba(59,130,246,0.5), inset 0 0 25px rgba(0,0,0,0.5); position:relative; overflow:hidden; background:#1a1a2e; }
+.wheel-svg { width:100%; height:100%; position:absolute; inset:0; }
+.wheel-pointer { position:absolute; top:-15px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-top:24px solid var(--gold); z-index:10; filter:drop-shadow(0 0 10px rgba(245,158,11,0.9)); }
+.wheel-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:55px; height:55px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; font-size:1.4rem; z-index:5; box-shadow:0 0 20px rgba(59,130,246,0.6); }
+.btn-spin { padding:16px 45px; border:none; border-radius:14px; background:linear-gradient(135deg,var(--gold),#f97316); color:#fff; font-weight:800; font-size:1rem; cursor:pointer; transition:0.3s; width:100%; box-shadow:0 8px 30px rgba(245,158,11,0.4); }
+.btn-spin:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-spin .timer { display:block; font-size:0.72rem; font-weight:600; margin-top:4px; opacity:0.9; }
+.rewards-title { font-size:1.1rem; font-weight:800; margin:25px 0 12px; }
+.reward-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+.reward-card.active { border-color:var(--gold); background:rgba(245,158,11,0.05); }
+.reward-card .info .name { font-weight:800; font-size:0.88rem; margin-bottom:3px; }
+.reward-card .info .timer { font-size:0.72rem; color:var(--gold); }
+.reward-card .info .expired { font-size:0.72rem; color:var(--red); }
+.btn-mini { padding:8px 14px; border:none; border-radius:10px; font-weight:700; font-size:0.75rem; cursor:pointer; }
+.btn-mini.gold { background:var(--gold); color:#fff; }
+.btn-mini.disabled { background:rgba(255,255,255,0.05); color:#64748b; }
+
+.prizes-panel {
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:20px;
+}
+.prizes-panel h4 {
+    font-size:0.9rem; font-weight:800; margin-bottom:12px;
+    display:flex; align-items:center; gap:6px;
+}
+.prize-row {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:10px;
+    margin-bottom:6px;
+    background:rgba(0,0,0,0.2);
+    font-size:0.78rem;
+}
+.prize-row:last-child { margin-bottom:0; }
+.prize-color {
+    width:14px; height:14px; border-radius:4px; flex-shrink:0;
+    box-shadow:0 0 8px currentColor;
+}
+.prize-name { flex:1; color:#cbd5e1; font-weight:600; }
+.prize-chance { font-size:0.68rem; color:#64748b; font-weight:700; }
+.prize-rare { color:var(--gold); font-size:0.65rem; }
+
+.admin-panel { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:25px; margin-top:20px; }
+.admin-panel h3 { font-size:1.1rem; font-weight:800; margin-bottom:15px; display:flex; align-items:center; gap:8px; }
+.admin-input { width:100%; padding:12px 14px; margin-bottom:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:#fff; font-size:0.85rem; outline:none; }
+.admin-input:focus { border-color:var(--accent); }
+.admin-input::placeholder { color:#64748b; }
+.search-input { width:100%; padding:12px 14px; margin-bottom:15px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:#fff; font-size:0.85rem; outline:none; }
+.search-input:focus { border-color:var(--accent); }
+.user-list { margin-top:10px; }
+.user-item { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; }
+.user-item .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+.user-item .login { font-weight:800; font-size:0.95rem; }
+.user-item .badges { display:flex; gap:6px; flex-wrap:wrap; }
+.user-item .tariff-badge { font-size:0.7rem; padding:3px 10px; border-radius:10px; font-weight:800; }
+.tariff-badge.bronze { background:rgba(205,127,50,0.2); color:#cd7f32; }
+.tariff-badge.silver { background:rgba(192,192,192,0.2); color:#c0c0c0; }
+.tariff-badge.gold { background:rgba(245,158,11,0.2); color:var(--gold); }
+.tariff-badge.none { background:rgba(255,255,255,0.05); color:#64748b; }
+.sub-badge { font-size:0.7rem; padding:3px 10px; border-radius:10px; font-weight:800; }
+.sub-badge.active { background:rgba(16,185,129,0.2); color:var(--green); }
+.sub-badge.expired { background:rgba(239,68,68,0.2); color:var(--red); }
+.sub-badge.none { background:rgba(255,255,255,0.05); color:#64748b; }
+.user-item .stats { font-size:0.72rem; color:#94a3b8; line-height:1.6; padding:10px; background:rgba(0,0,0,0.2); border-radius:10px; margin-bottom:10px; }
+.user-item .stats b { color:#cbd5e1; }
+.user-item .actions { display:flex; gap:6px; flex-wrap:wrap; }
+.user-item .actions button { padding:7px 12px; border:none; border-radius:8px; font-size:0.7rem; font-weight:700; cursor:pointer; transition:0.2s; }
+.user-item .actions button:hover { opacity:0.8; }
+.btn-reset { background:rgba(59,130,246,0.2); color:var(--accent); }
+.btn-delete { background:rgba(239,68,68,0.2); color:var(--red); }
+.btn-edit { background:rgba(16,185,129,0.2); color:var(--green); }
+.btn-view { background:rgba(245,158,11,0.2); color:var(--gold); }
+.btn-sub-add { background:rgba(16,185,129,0.2); color:var(--green); }
+.btn-sub-exp { background:rgba(239,68,68,0.2); color:var(--red); }
+.tariff-select { padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:#fff; font-size:0.75rem; font-weight:700; cursor:pointer; }
+.tariff-select:focus { border-color:var(--accent); outline:none; }
+.tariff-select option { background:#0e0e1a; color:#fff; }
+.client-rewards { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:none; }
+.client-rewards.active { display:block; }
+.client-rewards .reward-row { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:6px; font-size:0.78rem; }
+.client-rewards .reward-row .name { color:#cbd5e1; }
+.client-rewards .reward-row .date { color:#64748b; font-size:0.68rem; margin-left:6px; }
+.client-rewards .reward-row button { padding:4px 10px; border:none; border-radius:6px; background:rgba(239,68,68,0.2); color:var(--red); font-size:0.65rem; font-weight:700; cursor:pointer; }
+.socials { display:flex; gap:8px; justify-content:center; margin-top:15px; flex-wrap:wrap; }
+.social-btn { display:flex; align-items:center; gap:6px; padding:10px 16px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; text-decoration:none; font-weight:700; font-size:0.78rem; transition:0.3s; }
+.social-btn:hover { background:rgba(59,130,246,0.15); border-color:var(--accent); }
+.toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-120px); background:var(--card); border:1px solid var(--border); color:#fff; padding:14px 24px; border-radius:12px; font-weight:700; font-size:0.85rem; z-index:2000; transition:0.4s; box-shadow:0 8px 30px rgba(0,0,0,0.5); max-width:90%; }
+.toast.active { transform:translateX(-50%) translateY(0); }
+.toast.gold { border-color:var(--gold); color:var(--gold); }
+.toast.green { border-color:var(--green); color:var(--green); }
+.toast.red { border-color:var(--red); color:var(--red); }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px); z-index:1000; justify-content:center; align-items:center; padding:20px; }
+.modal.active { display:flex; }
+.modal-box { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:35px; max-width:350px; width:100%; text-align:center; }
+.modal-box .big-icon { font-size:5rem; margin-bottom:15px; animation:pop 0.5s ease-out; }
+@keyframes pop { 0% { transform:scale(0); } 70% { transform:scale(1.2); } 100% { transform:scale(1); } }
+.modal-box h3 { font-size:1.5rem; font-weight:900; margin-bottom:10px; }
+.modal-box p { color:#cbd5e1; font-size:0.9rem; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div class="bg-glow g1"></div>
+<div class="bg-glow g2"></div>
+
+<div class="container">
+    <div class="header">
+        <div class="logo">JOD<span>_</span>VPN</div>
+        <div class="user-badge" id="userBadge" style="display:none;">
+            <div class="avatar" id="userAvatar">U</div>
+            <div class="name" id="userName">Пользователь</div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ВХОДА -->
+    <div class="screen active" id="screenLogin">
+        <div class="auth-card">
+            <h2>🔐 Вход</h2>
+            <p>Введите логин и специальный ключ</p>
+
+            <div class="server-error" id="serverErrorLogin">
+                🔌 Сервер не отвечает. Попробуйте позже.
+            </div>
+            <div class="error-msg" id="loginError"></div>
+
+            <input type="text" class="auth-input" id="loginInput" placeholder="Логин">
+            <input type="text" class="auth-input" id="keyInput" placeholder="Специальный ключ">
+            <button class="btn btn-primary" onclick="doLogin()">Войти</button>
+            <button class="btn btn-secondary" onclick="showScreen('screenRegister')">Регистрация</button>
+            <button class="btn btn-support" onclick="openSupport()">💬 Поддержка</button>
+        </div>
+        <div class="socials">
+            <a href="https://t.me/JODVPN_bot" target="_blank" class="social-btn">🤖 VPN-бот</a>
+            <a href="https://t.me/JOD_VPN" target="_blank" class="social-btn">📢 Telegram</a>
+            <a href="https://www.tiktok.com/@jodik_offisal" target="_blank" class="social-btn">🎵 TikTok</a>
+        </div>
+    </div>
+
+    <!-- ЭКРАН РЕГИСТРАЦИИ -->
+    <div class="screen" id="screenRegister">
+        <div class="auth-card">
+            <h2>📝 Регистрация</h2>
+            <p>Чтобы получить доступ к рулетке</p>
+            <button class="btn btn-primary" onclick="showScreen('screenInstruction')">📖 Инструкция</button>
+            <button class="btn btn-secondary" onclick="writeToAdmin()">💬 Написать в поддержку</button>
+            <button class="btn btn-secondary" onclick="showScreen('screenLogin')">Назад</button>
+            <button class="btn btn-support" onclick="openSupport()">💬 Поддержка</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ИНСТРУКЦИИ -->
+    <div class="screen" id="screenInstruction">
+        <div class="auth-card">
+            <h2>📖 Инструкция</h2>
+            <div class="register-info">
+                <div class="step"><div class="num">1</div><div>Напишите в поддержку <b>@AAAP4GPMX</b></div></div>
+                <div class="step"><div class="num">2</div><div>Купите подписку <b>«Комфортный»</b></div></div>
+                <div class="step"><div class="num">3</div><div>Оплата: <b>СБП или Крипта</b></div></div>
+                <div class="step"><div class="num">4</div><div>После оплаты вы получите <b>логин и ключ</b></div></div>
+                <div class="step"><div class="num">5</div><div>Введите их на экране входа</div></div>
+            </div>
+            <div class="tariff-list">
+                <div class="tariff-row"><span class="name">🥉 Новичок</span><span class="req">Комфорт на 7 дней</span></div>
+                <div class="tariff-row"><span class="name">🥈 Продвинутый</span><span class="req">Комфорт на 30 дней</span></div>
+                <div class="tariff-row"><span class="name">🥇 Элита</span><span class="req">Комфорт на 365 дней</span></div>
+            </div>
+            <button class="btn btn-primary" onclick="writeToAdmin()">💬 Написать</button>
+            <button class="btn btn-secondary" onclick="showScreen('screenRegister')">Назад</button>
+            <button class="btn btn-support" onclick="openSupport()">💬 Поддержка</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН РУЛЕТКИ -->
+    <div class="screen" id="screenRoulette">
+        <div class="tariff-card none" id="tariffCard">
+            <h3 id="tariffName">🥉 Новичок</h3>
+            <p id="tariffDesc">Ваш уровень наград</p>
+            <button class="btn-contact" id="contactBtn" style="display:none;" onclick="contactAdmin()">💬 Обратиться</button>
+        </div>
+
+        <div class="prizes-panel" id="prizesPanel">
+            <h4>🎁 Что можно выбить</h4>
+            <div id="prizesList"></div>
+        </div>
+
+        <div class="wheel-container" id="wheelContainer">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" id="wheel">
+                <svg class="wheel-svg" id="wheelSvg" viewBox="0 0 100 100"></svg>
+            </div>
+            <div class="wheel-center">🎁</div>
+        </div>
+
+        <button class="btn-spin" id="spinBtn" onclick="spinWheel()">
+            🎰 Крутить колесо
+            <span class="timer" id="spinTimer"></span>
+        </button>
+
+        <div class="rewards-title" id="rewardsTitle" style="display:none;">🎁 Ваши награды</div>
+        <div id="rewardsGrid"></div>
+
+        <button class="btn btn-support" style="margin-top:15px;" onclick="openSupport()">💬 Поддержка</button>
+
+        <div class="socials">
+            <a href="https://t.me/JODVPN_bot" target="_blank" class="social-btn">🤖 VPN-бот</a>
+            <a href="https://t.me/JOD_VPN" target="_blank" class="social-btn">📢 Telegram</a>
+            <a href="https://www.tiktok.com/@jodik_offisal" target="_blank" class="social-btn">🎵 TikTok</a>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top:15px;" onclick="logout()">Выйти</button>
+    </div>
+
+    <!-- ЭКРАН АДМИНКИ -->
+    <div class="screen" id="screenAdmin">
+        <div class="server-error" id="serverErrorAdmin">
+            🔌 Сервер не отвечает. Попробуйте позже.
+        </div>
+
+        <div class="admin-panel">
+            <h3>📖 Как выдавать клиентам</h3>
+            <div class="register-info" style="margin-bottom:0;">
+                <div class="step"><div class="num">1</div><div>Спросите у клиента желаемый <b>логин</b></div></div>
+                <div class="step"><div class="num">2</div><div>Введите <b>любой защищённый ключ</b></div></div>
+                <div class="step"><div class="num">3</div><div>Выберите <b>тариф</b>:</div></div>
+                <div class="tariff-list" style="margin:8px 0 10px 32px;">
+                    <div class="tariff-row"><span class="name">🥉 Новичок</span><span class="req">Комфорт 7 дней</span></div>
+                    <div class="tariff-row"><span class="name">🥈 Продвинутый</span><span class="req">Комфорт 30 дней</span></div>
+                    <div class="tariff-row"><span class="name">🥇 Элита</span><span class="req">Комфорт 365 дней</span></div>
+                </div>
+                <div class="step"><div class="num">4</div><div>Нажмите <b>«Добавить»</b></div></div>
+                <div class="step"><div class="num">5</div><div>В карточке клиента нажмите <b>«+7д» / «+30д» / «+365д»</b></div></div>
+                <div class="step"><div class="num">6</div><div>Передайте клиенту <b>логин и ключ</b></div></div>
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <h3>👑 Создать пользователя</h3>
+            <input type="text" class="admin-input" id="newLogin" placeholder="Логин (какой хочет клиент)">
+            <input type="text" class="admin-input" id="newKey" placeholder="Специальный ключ (любой)">
+            <select class="admin-input" id="newTariff">
+                <option value="0">Нет тарифа</option>
+                <option value="1">🥉 Новичок (Комфорт 7 дней)</option>
+                <option value="2">🥈 Продвинутый (Комфорт 30 дней)</option>
+                <option value="3">🥇 Элита (Комфорт 365 дней)</option>
+            </select>
+            <button class="btn btn-primary" onclick="createUser()">Добавить</button>
+        </div>
+
+        <div class="admin-panel">
+            <h3>👥 Все клиенты</h3>
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по логину..." oninput="renderAdmin()">
+            <div class="user-list" id="userList"></div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="logout()">Выйти из админки</button>
+    </div>
+</div>
+
+<div class="modal" id="winModal">
+    <div class="modal-box">
+        <div class="big-icon" id="winIcon">🎉</div>
+        <h3 id="winTitle">Вы выиграли!</h3>
+        <p id="winDesc"></p>
+        <button class="btn btn-primary" onclick="closeWinModal()">Забрать</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === НАСТРОЙКИ ===
+const ADMIN_USERNAME = "AAAP4GPMX";
+const STORAGE_KEY = "jodvpn_roulette_v21";
+const SESSION_KEY = "jodvpn_session";
+// ЗАМЕНИ НА СВОЙ URL СЕРВЕРА (например, https://xxx.hf.space)
+const SERVER_URL = "http://127.0.0.1:5000";
+
+// === СЕРВЕР ===
+async function serverAuth(login, key) {
+    try {
+        const res = await fetch(`${SERVER_URL}/auth?login=${encodeURIComponent(login)}&key=${encodeURIComponent(key)}`, { timeout: 5000 });
+        return await res.json();
+    } catch(e) {
+        return { ok: false, error: "server" };
+    }
+}
+
+async function loadUsersFromServer() {
+    try {
+        const res = await fetch(`${SERVER_URL}/users`, { timeout: 5000 });
+        if (!res.ok) throw new Error("bad response");
+        return await res.json();
+    } catch(e) {
+        return null;
+    }
+}
+
+async function saveUserToServer(user) {
+    try {
+        await fetch(`${SERVER_URL}/user`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(user)
+        });
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
+async function deleteUserFromServer(login) {
+    try {
+        await fetch(`${SERVER_URL}/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ login })
+        });
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
+// === ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ===
+function getLocalData() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            const data = JSON.parse(raw);
+            if (!data.users) data.users = {};
+            return data;
+        }
+    } catch(e) {}
+    return { users: {} };
+}
+function saveLocalData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+async function syncUsersFromServer() {
+    const serverUsers = await loadUsersFromServer();
+    if (serverUsers) {
+        saveLocalData({ users: serverUsers });
+        return true;
+    }
+    return false;
+}
+
+// === СЕССИЯ ===
+function saveSession(login) { localStorage.setItem(SESSION_KEY, login); }
+function getSession() { return localStorage.getItem(SESSION_KEY); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+// === UI ===
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+function toast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('active'), 3000);
+}
+function showError(msg) {
+    const e = document.getElementById('loginError');
+    e.textContent = msg;
+    e.classList.add('active');
+    document.getElementById('loginInput').classList.add('error');
+    document.getElementById('keyInput').classList.add('error');
+    setTimeout(() => {
+        e.classList.remove('active');
+        document.getElementById('loginInput').classList.remove('error');
+        document.getElementById('keyInput').classList.remove('error');
+    }, 4000);
+}
+function showServerError(screen) {
+    const el = document.getElementById(screen);
+    if (el) {
+        el.classList.add('active');
+        setTimeout(() => el.classList.remove('active'), 5000);
+    }
+}
+function formatDate(ts) {
+    if (!ts) return 'никогда';
+    const d = new Date(ts);
+    return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+function getSubStatus(user) {
+    if (!user.subEnd) return 'none';
+    const end = new Date(user.subEnd).getTime();
+    return end > Date.now() ? 'active' : 'expired';
+}
+
+// === НАГРАДЫ ===
+const REWARDS = {
+    1: [
+        { name: "Ничего", weight: 55, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 40, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 25, type: "none", color: "#6b7280" },
+        { name: "+10 ₽", weight: 12, type: "money", value: 10, color: "#f59e0b" },
+        { name: "2 дня + 10 ГБ + 1 устр.", weight: 5, type: "combo", days: 2, gb: 10, devices: 1, color: "#3b82f6" },
+        { name: "10 дней + 20 ГБ + 2 устр.", weight: 1, type: "combo", days: 10, gb: 20, devices: 2, rare: true, color: "#ef4444" },
+    ],
+    2: [
+        { name: "Ничего", weight: 60, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 45, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 30, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 20, type: "none", color: "#6b7280" },
+        { name: "+50 ₽", weight: 12, type: "money", value: 50, color: "#f59e0b" },
+        { name: "+50 ₽", weight: 8, type: "money", value: 50, color: "#f59e0b" },
+        { name: "Скидка 10%", weight: 7, type: "discount", value: 10, color: "#8b5cf6" },
+        { name: "7 дней + 15 ГБ + 1 устр.", weight: 4, type: "combo", days: 7, gb: 15, devices: 1, color: "#3b82f6" },
+        { name: "25 дней + 30 ГБ + 3 устр.", weight: 1, type: "combo", days: 25, gb: 30, devices: 3, rare: true, color: "#ef4444" },
+    ],
+    3: [
+        { name: "Ничего", weight: 65, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 50, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 35, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 25, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 18, type: "none", color: "#6b7280" },
+        { name: "Ничего", weight: 12, type: "none", color: "#6b7280" },
+        { name: "+150 ₽", weight: 8, type: "money", value: 150, color: "#f59e0b" },
+        { name: "Скидка 15%", weight: 6, type: "discount", value: 15, color: "#8b5cf6" },
+        { name: "30 дней + 35 ГБ + 3 устр.", weight: 3, type: "combo", days: 30, gb: 35, devices: 3, color: "#3b82f6" },
+        { name: "60 дней + 100 ГБ + 4 устр.", weight: 1, type: "combo", days: 60, gb: 100, devices: 4, rare: true, color: "#ef4444" },
+    ]
+};
+
+// === ВХОД ===
+async function doLogin() {
+    const login = document.getElementById('loginInput').value.trim();
+    const key = document.getElementById('keyInput').value.trim();
+    if (!login) { showError('❌ Введите логин'); return; }
+    if (!key) { showError('❌ Введите специальный ключ'); return; }
+
+    // Запрос на сервер
+    const result = await serverAuth(login, key);
+
+    // Если сервер не ответил
+    if (result.error === "server") {
+        showServerError('serverErrorLogin');
+        return;
+    }
+
+    if (result.ok) {
+        if (result.role === "admin") {
+            saveSession('admin');
+            await syncUsersFromServer();
+            showScreen('screenAdmin');
+            renderAdmin();
+            toast('👑 Добро пожаловать, Админ!', 'gold');
+            return;
+        } else {
+            saveSession(login);
+            await syncUsersFromServer();
+            showRoulette(login);
+            toast(`✅ Добро пожаловать, ${login}!`, 'green');
+            return;
+        }
+    }
+
+    // Если сервер ответил "invalid"
+    showError('❌ Неверный логин или ключ');
+}
+
+// === АВТОВХОД ===
+async function autoLogin() {
+    const session = getSession();
+    if (!session) return;
+
+    const ok = await syncUsersFromServer();
+    if (!ok && !getLocalData().users[session]) {
+        // Сервер не доступен и локально нет — выход
+        clearSession();
+        showServerError('serverErrorLogin');
+        return;
+    }
+
+    if (session === 'admin') {
+        showScreen('screenAdmin');
+        renderAdmin();
+        return;
+    }
+    const data = getLocalData();
+    if (data.users[session]) showRoulette(session);
+    else clearSession();
+}
+
+// === РЕГИСТРАЦИЯ ===
+function writeToAdmin() {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    const msg = `Здравствуйте! Хочу получить доступ к Рулетке JOD_VPN.\n\nПрошу выдать логин и ключ.\n\nНомер: ${num}`;
+    window.open(`https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast('💬 Открываю Telegram...', 'green');
+}
+function contactAdmin() {
+    const msg = `Здравствуйте! Хочу получить тариф для участия в Рулетке JOD_VPN.`;
+    window.open(`https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast('💬 Открываю Telegram...', 'green');
+}
+function openSupport() {
+    const msg = `Здравствуйте! Нужна помощь с рулеткой JOD_VPN.`;
+    window.open(`https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast('💬 Открываю Telegram...', 'green');
+}
+
+// === РУЛЕТКА ===
+function showRoulette(login) {
+    const data = getLocalData();
+    const user = data.users[login];
+    if (!user) return;
+
+    document.getElementById('userBadge').style.display = 'flex';
+    document.getElementById('userAvatar').textContent = login[0].toUpperCase();
+    document.getElementById('userName').textContent = login;
+
+    const tariffs = {
+        0: { name: "🔒 Нет тарифа", desc: "Обратитесь в поддержку для активации", class: "none" },
+        1: { name: "🥉 Новичок", desc: "Базовые награды", class: "bronze" },
+        2: { name: "🥈 Продвинутый", desc: "Улучшенные награды", class: "silver" },
+        3: { name: "🥇 Элита", desc: "Максимальные награды", class: "gold" }
+    };
+    const t = tariffs[user.tariff];
+    const card = document.getElementById('tariffCard');
+    const subActive = getSubStatus(user) === 'active';
+
+    if (user.tariff === 0 || !subActive) {
+        card.className = 'tariff-card none';
+        if (user.tariff === 0) {
+            document.getElementById('tariffName').textContent = '🔒 Нет тарифа';
+            document.getElementById('tariffDesc').textContent = 'Обратитесь в поддержку';
+        } else {
+            document.getElementById('tariffName').textContent = '⏰ Подписка закончилась';
+            document.getElementById('tariffDesc').textContent = 'Продлите подписку для рулетки';
+        }
+        document.getElementById('spinBtn').style.display = 'none';
+        document.getElementById('wheelContainer').style.display = 'none';
+        document.getElementById('contactBtn').style.display = 'inline-block';
+        document.getElementById('prizesPanel').style.display = 'none';
+    } else {
+        card.className = 'tariff-card ' + t.class;
+        document.getElementById('tariffName').textContent = t.name;
+        document.getElementById('tariffDesc').textContent = t.desc;
+        document.getElementById('spinBtn').style.display = 'block';
+        document.getElementById('wheelContainer').style.display = 'block';
+        document.getElementById('contactBtn').style.display = 'none';
+        document.getElementById('prizesPanel').style.display = 'block';
+        renderWheel(user.tariff);
+        renderPrizes(user.tariff);
+    }
+
+    renderRewards(login);
+    updateSpinTimer(login);
+    showScreen('screenRoulette');
+}
+
+function renderPrizes(tariff) {
+    const rewards = REWARDS[tariff] || [];
+    const list = document.getElementById('prizesList');
+    list.innerHTML = '';
+    const totalWeight = rewards.reduce((sum, r) => sum + r.weight, 0);
+
+    rewards.forEach(r => {
+        const percent = ((r.weight / totalWeight) * 100).toFixed(0);
+        const row = document.createElement('div');
+        row.className = 'prize-row';
+        row.innerHTML = `
+            <div class="prize-color" style="background:${r.color}; color:${r.color};"></div>
+            <div class="prize-name">${r.name}${r.rare ? ' <span class="prize-rare">⭐ РЕДКАЯ</span>' : ''}</div>
+            <div class="prize-chance">${percent}%</div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function renderWheel(tariff) {
+    const rewards = REWARDS[tariff] || [];
+    const svg = document.getElementById('wheelSvg');
+    svg.innerHTML = '';
+
+    const totalWeight = rewards.reduce((sum, r) => sum + r.weight, 0);
+    const cx = 50, cy = 50, r = 50;
+    let currentAngle = -90;
+
+    rewards.forEach((reward) => {
+        const angle = (reward.weight / totalWeight) * 360;
+        const startRad = (currentAngle * Math.PI) / 180;
+        const endAngle = currentAngle + angle;
+        const endRad = (endAngle * Math.PI) / 180;
+
+        const x1 = cx + r * Math.cos(startRad);
+        const y1 = cy + r * Math.sin(startRad);
+        const x2 = cx + r * Math.cos(endRad);
+        const y2 = cy + r * Math.sin(endRad);
+
+        const largeArc = angle > 180 ? 1 : 0;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', reward.color);
+        path.setAttribute('stroke', '#0e0e1a');
+        path.setAttribute('stroke-width', '0.5');
+        svg.appendChild(path);
+
+        currentAngle = endAngle;
+    });
+}
+
+let isSpinning = false;
+
+function spinWheel() {
+    if (isSpinning) return;
+    const data = getLocalData();
+    const login = getSession();
+    if (login === 'admin') return;
+    const user = data.users[login];
+    if (!user || user.tariff === 0) return;
+    if (getSubStatus(user) !== 'active') { toast('⏰ Подписка закончилась', 'red'); return; }
+
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    if (now - user.lastSpin < day) { toast('⏳ Ещё рано!', 'red'); return; }
+
+    isSpinning = true;
+    document.getElementById('spinBtn').disabled = true;
+
+    const allRewards = REWARDS[user.tariff];
+    const usedRare = user.usedRare || [];
+
+    const availableRewards = allRewards.filter((r, idx) => {
+        if (!r.rare) return true;
+        return !usedRare.includes(idx);
+    });
+
+    const totalWeight = availableRewards.reduce((sum, r) => sum + r.weight, 0);
+    let random = Math.random() * totalWeight;
+    let selected = availableRewards[0];
+
+    for (let i = 0; i < availableRewards.length; i++) {
+        random -= availableRewards[i].weight;
+        if (random <= 0) {
+            selected = availableRewards[i];
+            break;
+        }
+    }
+
+    const selectedIndex = allRewards.indexOf(selected);
+    const totalWeightAll = allRewards.reduce((sum, r) => sum + r.weight, 0);
+
+    let angleBeforeSelected = 0;
+    for (let i = 0; i < selectedIndex; i++) {
+        angleBeforeSelected += (allRewards[i].weight / totalWeightAll) * 360;
+    }
+    const selectedSegmentAngle = (allRewards[selectedIndex].weight / totalWeightAll) * 360;
+    const selectedMidAngle = -90 + angleBeforeSelected + selectedSegmentAngle / 2;
+
+    let extraSpins, duration;
+    if (user.tariff === 1) { extraSpins = 5 + Math.floor(Math.random() * 3); duration = 4.5; }
+    else if (user.tariff === 2) { extraSpins = 8 + Math.floor(Math.random() * 4); duration = 6; }
+    else { extraSpins = 12 + Math.floor(Math.random() * 5); duration = 7.5; }
+
+    let targetRotation = -90 - selectedMidAngle;
+    targetRotation += 360 * extraSpins;
+
+    const wheel = document.getElementById('wheel');
+    wheel.style.transition = `transform ${duration}s cubic-bezier(0.17,0.67,0.12,0.99)`;
+    wheel.style.transform = `rotate(${targetRotation}deg)`;
+
+    setTimeout(() => {
+        isSpinning = false;
+        user.lastSpin = Date.now();
+
+        if (selected.rare) {
+            if (!user.usedRare) user.usedRare = [];
+            if (!user.usedRare.includes(selectedIndex)) {
+                user.usedRare.push(selectedIndex);
+            }
+        }
+
+        if (selected.type === 'none') {
+            showWin("😢", "Увы, ничего", "Попробуйте завтра!", false);
+        } else {
+            if (!user.rewards) user.rewards = [];
+            const reward = {
+                name: selected.name,
+                type: selected.type,
+                value: selected.value || 0,
+                days: selected.days || 0,
+                gb: selected.gb || 0,
+                devices: selected.devices || 0,
+                expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+                createdAt: Date.now(),
+                rare: selected.rare || false
+            };
+            user.rewards.push(reward);
+            showWin("🎉", "Вы выиграли!", selected.name, true);
+        }
+
+        saveLocalData(data);
+        saveUserToServer(user);
+        renderRewards(login);
+        updateSpinTimer(login);
+        document.getElementById('spinBtn').disabled = false;
+    }, duration * 1000 + 200);
+}
+
+function showWin(icon, title, desc, isWin) {
+    document.getElementById('winIcon').textContent = icon;
+    document.getElementById('winTitle').textContent = title;
+    document.getElementById('winTitle').style.color = isWin ? '#f59e0b' : '#94a3b8';
+    document.getElementById('winDesc').textContent = desc;
+    document.getElementById('winModal').classList.add('active');
+}
+function closeWinModal() { document.getElementById('winModal').classList.remove('active'); }
+
+function updateSpinTimer(login) {
+    const data = getLocalData();
+    const user = data.users[login];
+    if (!user) return;
+    const btn = document.getElementById('spinBtn');
+    const timer = document.getElementById('spinTimer');
+    if (user.tariff === 0 || getSubStatus(user) !== 'active') {
+        btn.disabled = true;
+        timer.textContent = '';
+        return;
+    }
+
+    const now = Date.now();
+    const diff = now - user.lastSpin;
+    const day = 24 * 60 * 60 * 1000;
+
+    if (diff >= day) {
+        btn.disabled = false;
+        timer.textContent = '✅ Доступно!';
+    } else {
+        const left = day - diff;
+        const h = Math.floor(left / 3600000);
+        const m = Math.floor((left % 3600000) / 60000);
+        btn.disabled = true;
+        timer.textContent = `⏳ Через ${h}ч ${m}м`;
+    }
+}
+
+function renderRewards(login) {
+    const data = getLocalData();
+    const user = data.users[login];
+    const grid = document.getElementById('rewardsGrid');
+    const title = document.getElementById('rewardsTitle');
+
+    if (!user || !user.rewards || user.rewards.length === 0) {
+        title.style.display = 'none';
+        return;
+    }
+
+    const now = Date.now();
+    user.rewards = user.rewards.filter(r => r.expires > now);
+    saveLocalData(data);
+
+    if (user.rewards.length === 0) {
+        title.style.display = 'none';
+        return;
+    }
+
+    title.style.display = 'block';
+    grid.innerHTML = '';
+
+    user.rewards.forEach((reward, i) => {
+        const expired = Date.now() > reward.expires;
+        const card = document.createElement('div');
+        card.className = 'reward-card' + (expired ? '' : ' active');
+        card.innerHTML = `
+            <div class="info">
+                <div class="name">${reward.name}${reward.rare ? ' ⭐' : ''}</div>
+                <div class="${expired ? 'expired' : 'timer'}">${expired ? '❌ Истёк' : '⏳ 7 дней'}</div>
+            </div>
+            <button class="btn-mini ${expired ? 'disabled' : 'gold'}" 
+                    onclick="activateReward('${login}', ${i})" ${expired ? 'disabled' : ''}>
+                ${expired ? 'Истёк' : 'Забрать'}
+            </button>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function activateReward(login, index) {
+    const data = getLocalData();
+    const user = data.users[login];
+    if (!user) return;
+    const reward = user.rewards[index];
+    if (!reward || Date.now() > reward.expires) return;
+
+    let details = `🎁 Награда!\nПользователь: ${login}\nНаграда: ${reward.name}`;
+    if (reward.rare) details += `\n⭐ РЕДКАЯ!`;
+
+    window.open(`https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(details)}`, '_blank');
+    toast('✅ Заявка отправлена!', 'green');
+}
+
+// === АДМИНКА ===
+async function renderAdmin() {
+    const ok = await syncUsersFromServer();
+    if (!ok) {
+        showServerError('serverErrorAdmin');
+    }
+    const data = getLocalData();
+    const list = document.getElementById('userList');
+    const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    list.innerHTML = '';
+
+    let logins = Object.keys(data.users);
+    if (search) logins = logins.filter(l => l.toLowerCase().includes(search));
+
+    if (logins.length === 0) {
+        list.innerHTML = '<p style="color:#64748b; font-size:0.85rem;">Нет пользователей</p>';
+        return;
+    }
+
+    const tariffNames = {0: "Нет", 1: "🥉 Новичок", 2: "🥈 Продвинутый", 3: "🥇 Элита"};
+    const tariffClasses = {0: "none", 1: "bronze", 2: "silver", 3: "gold"};
+
+    logins.forEach(login => {
+        const u = data.users[login];
+        const now = Date.now();
+        const activeRewards = (u.rewards || []).filter(r => r.expires > now);
+        const subStatus = getSubStatus(u);
+
+        const stats = `
+            <div class="stats">
+                🎰 Последний спин: <b>${formatDate(u.lastSpin)}</b><br>
+                📅 Создан: <b>${formatDate(u.createdAt)}</b><br>
+                ⚙️ Обновлён: <b>${formatDate(u.updatedAt)}</b><br>
+                ⏰ Подписка до: <b>${u.subEnd || 'не задана'}</b><br>
+                🎁 Активных наград: <b>${activeRewards.length}</b><br>
+                ⭐ Редких использовано: <b>${(u.usedRare || []).length}</b>
+            </div>
+        `;
+
+        let rewardsHTML = '';
+        if (activeRewards.length > 0) {
+            rewardsHTML = '<div class="client-rewards" id="rewards-' + login + '">';
+            u.rewards.forEach((r, realIdx) => {
+                if (r.expires <= now) return;
+                rewardsHTML += `
+                    <div class="reward-row">
+                        <div>
+                            <span class="name">${r.name}${r.rare ? ' ⭐' : ''}</span>
+                            <span class="date">${formatDate(r.createdAt)}</span>
+                        </div>
+                        <button onclick="deleteReward('${login}', ${realIdx})">Удалить</button>
+                    </div>
+                `;
+            });
+            rewardsHTML += '</div>';
+        }
+
+        const tariffOptions = `
+            <select class="tariff-select" onchange="setTariff('${login}', this.value)">
+                <option value="0" ${u.tariff == 0 ? 'selected' : ''}>🔒 Нет</option>
+                <option value="1" ${u.tariff == 1 ? 'selected' : ''}>🥉 Новичок</option>
+                <option value="2" ${u.tariff == 2 ? 'selected' : ''}>🥈 Продвинутый</option>
+                <option value="3" ${u.tariff == 3 ? 'selected' : ''}>🥇 Элита</option>
+            </select>
+        `;
+
+        const subClass = subStatus === 'active' ? 'active' : subStatus === 'expired' ? 'expired' : 'none';
+        const subText = subStatus === 'active' ? '✅ Активна' : subStatus === 'expired' ? '❌ Закончилась' : '⚪ Не задана';
+
+        const item = document.createElement('div');
+        item.className = 'user-item';
+        item.innerHTML = `
+            <div class="top">
+                <div class="login">${login}</div>
+                <div class="badges">
+                    <div class="tariff-badge ${tariffClasses[u.tariff]}">${tariffNames[u.tariff]}</div>
+                    <div class="sub-badge ${subClass}">${subText}</div>
+                </div>
+            </div>
+            ${stats}
+            <div class="actions">
+                <button class="btn-view" onclick="toggleRewards('${login}')">👁 Награды (${activeRewards.length})</button>
+                ${tariffOptions}
+                <button class="btn-sub-add" onclick="setSubDays('${login}', 7)">+7д</button>
+                <button class="btn-sub-add" onclick="setSubDays('${login}', 30)">+30д</button>
+                <button class="btn-sub-add" onclick="setSubDays('${login}', 365)">+365д</button>
+                <button class="btn-sub-exp" onclick="setSubExpired('${login}')">Закончить</button>
+                <button class="btn-edit" onclick="changeLogin('${login}')">Логин</button>
+                <button class="btn-edit" onclick="changeKey('${login}')">Ключ</button>
+                <button class="btn-reset" onclick="resetTimer('${login}')">Сбросить таймер</button>
+                <button class="btn-delete" onclick="deleteUser('${login}')">Удалить</button>
+            </div>
+            ${rewardsHTML}
+        `;
+        list.appendChild(item);
+    });
+}
+
+async function setTariff(login, value) {
+    const data = getLocalData();
+    const u = data.users[login];
+    const t = parseInt(value);
+    const oldTariff = u.tariff;
+    u.tariff = t;
+    u.tariffUpdatedAt = Date.now();
+    u.updatedAt = Date.now();
+    if (oldTariff !== t) u.usedRare = [];
+    saveLocalData(data);
+    const ok = await saveUserToServer(u);
+    if (!ok) toast('⚠️ Не удалось сохранить на сервере', 'red');
+    toast(`✅ Тариф ${login} изменён`, 'green');
+    renderAdmin();
+}
+
+async function setSubDays(login, days) {
+    const data = getLocalData();
+    const u = data.users[login];
+    const now = Date.now();
+    let base = u.subEnd ? new Date(u.subEnd).getTime() : now;
+    if (base < now) base = now;
+    const newEnd = base + days * 24 * 60 * 60 * 1000;
+    u.subEnd = new Date(newEnd).toISOString().slice(0, 10);
+    u.updatedAt = now;
+    u.usedRare = [];
+    saveLocalData(data);
+    const ok = await saveUserToServer(u);
+    if (!ok) toast('⚠️ Не удалось сохранить на сервере', 'red');
+    toast(`✅ ${login}: +${days} дней`, 'green');
+    renderAdmin();
+}
+
+async function setSubExpired(login) {
+    const data = getLocalData();
+    const u = data.users[login];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    u.subEnd = yesterday.toISOString().slice(0, 10);
+    u.tariff = 0;
+    u.tariffUpdatedAt = Date.now();
+    u.updatedAt = Date.now();
+    saveLocalData(data);
+    await saveUserToServer(u);
+    toast(`❌ ${login}: подписка закончена`, 'red');
+    renderAdmin();
+}
+
+function toggleRewards(login) {
+    const el = document.getElementById('rewards-' + login);
+    if (el) el.classList.toggle('active');
+}
+
+async function deleteReward(login, index) {
+    const data = getLocalData();
+    const u = data.users[login];
+    if (!u || !u.rewards || !u.rewards[index]) {
+        toast('❌ Награда не найдена', 'red');
+        return;
+    }
+    const rewardName = u.rewards[index].name;
+    u.rewards.splice(index, 1);
+    u.updatedAt = Date.now();
+    saveLocalData(data);
+    await saveUserToServer(u);
+    toast(`🗑 "${rewardName}" удалена`, 'red');
+    renderAdmin();
+}
+
+async function createUser() {
+    const login = document.getElementById('newLogin').value.trim();
+    const key = document.getElementById('newKey').value.trim() || Math.random().toString(36).substring(2, 10);
+    const tariff = parseInt(document.getElementById('newTariff').value);
+
+    if (!login) { toast('❌ Введите логин', 'red'); return; }
+
+    const data = getLocalData();
+    if (data.users[login]) { toast('❌ Логин уже занят', 'red'); return; }
+
+    const now = Date.now();
+    data.users[login] = {
+        login: login,
+        key: key,
+        tariff: tariff,
+        rewards: [],
+        usedRare: [],
+        lastSpin: 0,
+        createdAt: now,
+        updatedAt: now,
+        tariffUpdatedAt: now,
+        subEnd: null
+    };
+    saveLocalData(data);
+    const ok = await saveUserToServer(data.users[login]);
+    if (!ok) toast('⚠️ Не удалось сохранить на сервере', 'red');
+    toast(`✅ ${login} создан! Ключ: ${key}`, 'green');
+    document.getElementById('newLogin').value = '';
+    document.getElementById('newKey').value = '';
+    renderAdmin();
+}
+
+async function changeLogin(login) {
+    const data = getLocalData();
+    const u = data.users[login];
+    const newLogin = prompt(`Новый логин (было: ${login}):`, login);
+    if (!newLogin || newLogin === login) return;
+    if (data.users[newLogin]) { toast('❌ Логин занят', 'red'); return; }
+    delete data.users[login];
+    await deleteUserFromServer(login);
+    u.login = newLogin;
+    u.updatedAt = Date.now();
+    data.users[newLogin] = u;
+    saveLocalData(data);
+    await saveUserToServer(u);
+    toast(`✅ Логин изменён на ${newLogin}`, 'green');
+    renderAdmin();
+}
+
+async function changeKey(login) {
+    const data = getLocalData();
+    const u = data.users[login];
+    const newKey = prompt(`Новый ключ (было: ${u.key}):`, u.key);
+    if (!newKey) return;
+    u.key = newKey;
+    u.updatedAt = Date.now();
+    saveLocalData(data);
+    await saveUserToServer(u);
+    toast(`✅ Ключ изменён`, 'green');
+    renderAdmin();
+}
+
+async function resetTimer(login) {
+    const data = getLocalData();
+    const u = data.users[login];
+    if (!confirm(`Сбросить таймер рулетки для ${login}?`)) return;
+    u.lastSpin = 0;
+    u.updatedAt = Date.now();
+    saveLocalData(data);
+    await saveUserToServer(u);
+    toast(`✅ Таймер ${login} сброшен`, 'green');
+    renderAdmin();
+}
+
+async function deleteUser(login) {
+    const data = getLocalData();
+    if (!confirm(`Удалить аккаунт ${login}?`)) return;
+    delete data.users[login];
+    saveLocalData(data);
+    await deleteUserFromServer(login);
+    toast(`🗑 ${login} удалён`, 'red');
+    renderAdmin();
+}
+
+function logout() {
+    clearSession();
+    document.getElementById('userBadge').style.display = 'none';
+    document.getElementById('loginInput').value = '';
+    document.getElementById('keyInput').value = '';
+    showScreen('screenLogin');
+    toast('👋 Вы вышли', '');
+}
+
+setInterval(() => {
+    const session = getSession();
+    if (session && session !== 'admin') updateSpinTimer(session);
+}, 60000);
+
+autoLogin();
+</script>
+</body>
+</html>
